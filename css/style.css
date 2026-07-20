@@ -91,7 +91,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh; /* dvh ပါ browser တွေမှာ ဒါက override ဖြစ်သွားမယ် */
     overflow: hidden;
 }
 

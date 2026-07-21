@@ -980,3 +980,39 @@ window.patchProfileAvatar = function() {
         window.patchNotifBadge();
     };
 })();
+
+// ==========================================
+// 📍 Hardware / Gesture Back Button Trap
+// ==========================================
+// Apk (WebView wrapper — Median/GoNative/AppMySite စသည်) ထဲမှာ back
+// လုပ်တိုင်း webView.canGoBack() ကို native ကနေ စစ်ပြီး history မရှိရင်
+// activity ကို ချက်ချင်း finish() ခေါ်ပစ်လိုက်တာမို့ (app တစ်ခုလုံးထွက်)
+// — history.pushState/popstate ဖြင့် "guard" state တစ်ခု အမြဲရှိနေအောင်
+// ထားပြီး၊ ဒီ popstate event ကိုသာ ကျွန်တော်တို့ကိုယ်တိုင် ကိုင်တွယ်မည်
+// (sub-layout ဆိုရင် back ကို sub-back-btn ဆီပို့၊ main tab ဆိုရင် exit
+// dialog ပြ)
+(function initBackButtonTrap() {
+    function pushGuard() {
+        history.pushState({ potBackGuard: true }, '', location.href);
+    }
+    pushGuard(); // boot အချိန်မှာ တစ်ခါ prime လုပ်
+
+    window.addEventListener('popstate', function () {
+        pushGuard(); // trap ကို ချက်ချင်း ပြန် re-arm (နောက် back တစ်ခါအတွက်)
+
+        // 1) exit dialog ပွင့်နေရင် ပိတ်လိုက် (No ကိုနှိပ်သလို)
+        const exitDialog = document.getElementById('custom-exit-dialog-overlay');
+        if (exitDialog) { exitDialog.remove(); return; }
+
+        // 2) sub-layout ထဲမှာနေရင် sub-back-btn ကို trigger လုပ် (app မထွက်)
+        const contentView = document.getElementById('content-view');
+        if (contentView && contentView.classList.contains('sub-layout-active')) {
+            const backBtn = document.getElementById('sub-back-btn');
+            if (backBtn) { backBtn.click(); return; }
+        }
+
+        // 3) main tab ပေါ်ရောက်နေမှသာ exit dialog ပြ
+        if (window.showExitConfirmationDialog) window.showExitConfirmationDialog();
+    });
+})();
+;

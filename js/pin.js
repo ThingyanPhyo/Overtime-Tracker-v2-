@@ -92,11 +92,19 @@ window.showPinScreen = function(mode, onSuccess) {
                 .pin-slide-down { animation: pinSlideDown 0.42s cubic-bezier(0.32,0.72,0,1) forwards; }
                 .pin-slide-left { animation: pinSlideLeft 0.42s cubic-bezier(0.32,0.72,0,1) forwards; }
                 #pin-gate-root  { background: transparent !important; }
-                #pin-gate-root.pin-gate-opaque { background: #ffffff !important; }
+                #pin-gate-root.pin-gate-opaque {
+                    background:
+                        radial-gradient(120% 55% at 50% -8%, rgba(26,78,143,0.14) 0%, rgba(26,78,143,0) 62%),
+                        linear-gradient(180deg, #f3f8fc 0%, #ffffff 55%) !important;
+                }
                 .home-push-up   { animation: homePushUp   0.38s cubic-bezier(0.32,0.72,0,1) forwards !important; overflow:hidden !important; transform-origin:top center !important; }
                 .home-pull-down { animation: homePullDown 0.42s cubic-bezier(0.32,0.72,0,1) forwards !important; overflow:hidden !important; transform-origin:top center !important; }
             </style>
-            <div id="pin-inner-wrap" class="${slideClass}" style="display:flex;flex-direction:column;width:100%;height:100%;background:#fff;position:absolute;top:0;left:0;right:0;bottom:0;align-items:center;justify-content:center;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            <div id="pin-inner-wrap" class="${slideClass}" style="display:flex;flex-direction:column;width:100%;height:100%;background:radial-gradient(120% 55% at 50% -8%, rgba(26,78,143,0.14) 0%, rgba(26,78,143,0) 62%), linear-gradient(180deg, #f3f8fc 0%, #ffffff 55%);position:absolute;top:0;left:0;right:0;bottom:0;align-items:center;justify-content:center;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+
+                <!-- Decorative blurred brand-color blobs (soft depth, replaces flat white bg) -->
+                <div style="position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle, rgba(26,78,143,0.10) 0%, rgba(26,78,143,0) 70%);pointer-events:none;"></div>
+                <div style="position:absolute;bottom:-90px;left:-70px;width:270px;height:270px;border-radius:50%;background:radial-gradient(circle, rgba(45,212,191,0.10) 0%, rgba(45,212,191,0) 70%);pointer-events:none;"></div>
 
                 <!-- X Exit button -->
                 <button id="pin-exit-btn" style="position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;-webkit-tap-highlight-color:transparent;">

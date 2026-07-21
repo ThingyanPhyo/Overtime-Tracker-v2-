@@ -193,7 +193,7 @@ window.openHolidaySubLayout = function(viewYear) {
 
 // ── Slip Album — Export Data ကနေ "Save to Slip Album" လုပ်ထားတဲ့ slip image
 // တွေကို လအလိုက် browse/view/delete လုပ်နိုင်သည် ──
-window.openSlipAlbumSubLayout = function(viewYear, viewMonth) {
+window.openSlipAlbumSubLayout = function(viewYear, viewMonth, fromExport) {
     if (typeof window.openSubLayout !== 'function') return;
 
     var now   = new Date();
@@ -258,12 +258,12 @@ window.openSlipAlbumSubLayout = function(viewYear, viewMonth) {
     document.getElementById('slip-album-prev')?.addEventListener('click', function() {
         var m = parseInt(month) - 1, y = year;
         if (m < 1) { m = 12; y--; }
-        window.openSlipAlbumSubLayout(y, String(m).padStart(2,'0'));
+        window.openSlipAlbumSubLayout(y, String(m).padStart(2,'0'), fromExport);
     });
     document.getElementById('slip-album-next')?.addEventListener('click', function() {
         var m = parseInt(month) + 1, y = year;
         if (m > 12) { m = 1; y++; }
-        window.openSlipAlbumSubLayout(y, String(m).padStart(2,'0'));
+        window.openSlipAlbumSubLayout(y, String(m).padStart(2,'0'), fromExport);
     });
 
     // Thumbnail tap → full-size view (simple lightbox overlay)
@@ -285,11 +285,12 @@ window.openSlipAlbumSubLayout = function(viewYear, viewMonth) {
             if (typeof window.deleteSlipFromAlbum === 'function') {
                 window.deleteSlipFromAlbum(String(year), month, id);
             }
-            window.openSlipAlbumSubLayout(year, month);
+            window.openSlipAlbumSubLayout(year, month, fromExport);
         });
     });
 
-    // Back button — Application menu ကို ပြန်သွားရန်
+    // Back button — Export ကနေ ဖွင့်ခဲ့ရင် Export ကို ပြန်၊ Application menu
+    // ကနေ ဖွင့်ခဲ့ရင် Application menu ကို ပြန်သွားရန်
     const backBtn = document.getElementById('sub-back-btn')
         || document.querySelector('.sub-layout .back-btn')
         || document.querySelector('.head-nav .back-btn');
@@ -301,7 +302,11 @@ window.openSlipAlbumSubLayout = function(viewYear, viewMonth) {
             if (fadeEl) fadeEl.style.animation = 'slipAlbumOut 0.18s ease-in forwards';
             setTimeout(() => {
                 removeDarkHeadNav();
-                openLanguageSubLayout();
+                if (fromExport && typeof window.openSettingExport === 'function') {
+                    window.openSettingExport();
+                } else {
+                    openLanguageSubLayout();
+                }
             }, 180);
         }, { once: true });
     }

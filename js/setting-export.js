@@ -130,12 +130,6 @@ function openExportDetailView(type, viewYear, viewMonth, fromHome) {
                 '</div>' +
                 (rowsHTML || '<p class="export-detail-empty">' + (window.t('export_no_records') || 'No records this month') + '</p>') +
             '</div>' +
-            (records.length > 0
-                ? '<button id="export-save-slip-btn" class="export-save-slip-btn">' +
-                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>' +
-                    '<span>' + (window.t('export_save_slip') || 'Save to Slip Album') + '</span>' +
-                  '</button>'
-                : '') +
         '</div>' +
         '</div>' +
         '<style>' +
@@ -144,7 +138,6 @@ function openExportDetailView(type, viewYear, viewMonth, fromHome) {
             '@keyframes exportDetailOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(30px)}}' +
             '.export-detail-month-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 0;font-size:14px;font-weight:700;color:#1a202c;}' +
             '.export-detail-arrow{background:none;border:none;font-size:22px;font-weight:700;color:#1a4e8f;padding:0 10px;cursor:pointer;line-height:1;}' +
-            '.export-save-slip-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 32px);margin:16px 16px 20px;padding:13px;border:none;border-radius:12px;background:#1a4e8f;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
             '.export-detail-total-card{margin:0 16px 14px;background:#1a4e8f;border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;}' +
             '.edt-lbl{color:rgba(255,255,255,0.7);font-size:12px;font-weight:600;}' +
             '.edt-val{color:#fff;font-size:20px;font-weight:800;}' +
@@ -173,12 +166,18 @@ function openExportDetailView(type, viewYear, viewMonth, fromHome) {
         '</svg>';
         headNav.appendChild(dlBtn);
         dlBtn.addEventListener('click', function() {
-            if (typeof window._runExport !== 'function') {
-                window.showToast?.(window.t('export_not_ready') || 'Please open the Home tab once, then try again.');
-                return;
-            }
-            var doTheExport = function() { window._runExport(type, year, month); };
-            if (typeof window.withPin === 'function') { window.withPin(doTheExport); } else { doTheExport(); }
+            var doDownloadAndSave = function() {
+                if (typeof window._runExport === 'function') {
+                    window._runExport(type, year, month);
+                } else {
+                    window.showToast?.(window.t('export_not_ready') || 'Please open the Home tab once, then try again.');
+                }
+                var canvas = buildSlipCanvas(type, year, month, mLabel, rowData, grandTotal);
+                var dataUrl = canvas.toDataURL('image/png');
+                window.saveSlipToAlbum(year, month, type, dataUrl);
+                showSlipSavedDialog(year, month);
+            };
+            if (typeof window.withPin === 'function') { window.withPin(doDownloadAndSave); } else { doDownloadAndSave(); }
         });
     }
 
@@ -215,13 +214,43 @@ function openExportDetailView(type, viewYear, viewMonth, fromHome) {
             }, 180);
         }, { once: true });
     }
+}
 
-    // ── Save to Slip Album ──
-    document.getElementById('export-save-slip-btn')?.addEventListener('click', function() {
-        var canvas = buildSlipCanvas(type, year, month, mLabel, rowData, grandTotal);
-        var dataUrl = canvas.toDataURL('image/png');
-        window.saveSlipToAlbum(year, month, type, dataUrl);
-        window.showToast?.(window.t('export_slip_saved') || 'Saved to Slip Album');
+// ── Save-to-Slip confirmation dialog — OK / View (View ဆို Slip Album ကို ဖွင့်ပေးမည်) ──
+function showSlipSavedDialog(year, month) {
+    var overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.style.zIndex = '99000';
+    overlay.innerHTML =
+        '<div class="dialog-box">' +
+            '<div class="dialog-title">' + (window.t('export_slip_saved') || 'Saved to Slip Album') + '</div>' +
+            '<div class="dialog-msg" style="margin-bottom:14px;">' +
+                (window.t('export_slip_saved_desc') || 'Your slip has been saved. You can view it anytime in Slip Album.') +
+            '</div>' +
+            '<div class="dialog-divider"></div>' +
+            '<div class="dialog-btn-row" style="display:flex;justify-content:space-between;gap:10px;">' +
+                '<button id="slip-saved-ok" class="dialog-btn dialog-btn-cancel">' +
+                    '<div class="dialog-icon dialog-icon-cancel">' +
+                        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+                    '</div>' +
+                    '<span class="dialog-btn-label">' + (window.t('ok') || 'OK') + '</span>' +
+                '</button>' +
+                '<button id="slip-saved-view" class="dialog-btn dialog-btn-confirm">' +
+                    '<div class="dialog-icon" style="background:#1a4e8f;box-shadow:0 2px 6px rgba(26,78,143,0.25);">' +
+                        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
+                    '</div>' +
+                    '<span class="dialog-btn-label confirm">' + (window.t('view') || 'View') + '</span>' +
+                '</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+
+    document.getElementById('slip-saved-ok')?.addEventListener('click', function() { overlay.remove(); });
+    document.getElementById('slip-saved-view')?.addEventListener('click', function() {
+        overlay.remove();
+        if (typeof window.openSlipAlbumSubLayout === 'function') {
+            window.openSlipAlbumSubLayout(parseInt(year), month, true);
+        }
     });
 }
 

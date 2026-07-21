@@ -982,6 +982,24 @@ window.patchProfileAvatar = function() {
 })();
 
 // ==========================================
+// 📍 Custom Back Handler Stack
+// ==========================================
+// openSubLayout() / record-menu.js ရဲ့ openRecSubLayout() လိုမျိုး
+// 'sub-layout-active' class ကို toggle လုပ်တဲ့ module တွေအပြင်၊
+// setting-personal.js လိုမျိုး class မသုံးဘဲ ကိုယ်ပိုင် back-btn markup
+// နဲ့ဖွင့်တဲ့ sub-view တွေလည်း hardware back ကို မှန်ကန်စွာ ကိုင်တွယ်နိုင်ဖို့
+// module မည်သည့်ဖြစ်ဖြစ် register/unregister လုပ်နိုင်တဲ့ stack —
+// stack ထဲမှာ တစ်ခုခုရှိနေရင် အဲ့ဒါကို popstate handler က အလိုအလျောက်
+// priority အမြင့်ဆုံးအနေနဲ့ ခေါ်ပေးမည် (sub-layout-active check ထက် အရင်)
+window._backHandlerStack = window._backHandlerStack || [];
+window.pushBackHandler = function (fn) {
+    if (typeof fn === 'function') window._backHandlerStack.push(fn);
+};
+window.popBackHandler = function () {
+    return window._backHandlerStack.pop();
+};
+
+// ==========================================
 // 📍 Hardware / Gesture Back Button Trap
 // ==========================================
 // Apk (WebView wrapper — Median/GoNative/AppMySite စသည်) ထဲမှာ back
@@ -1004,14 +1022,31 @@ window.patchProfileAvatar = function() {
         const exitDialog = document.getElementById('custom-exit-dialog-overlay');
         if (exitDialog) { exitDialog.remove(); return; }
 
-        // 2) sub-layout ထဲမှာနေရင် sub-back-btn ကို trigger လုပ် (app မထွက်)
+        // 2) module ကိုယ်တိုင် register ထားတဲ့ custom back handler ရှိရင် (setting-personal.js
+        //    လိုမျိုး sub-layout-active class မသုံးတဲ့ view တွေအတွက်) အဲ့ဒါကို အရင်သုံး
+        const stack = window._backHandlerStack;
+        if (stack && stack.length > 0) {
+            const topHandler = stack[stack.length - 1];
+            if (typeof topHandler === 'function') { topHandler(); return; }
+        }
+
+        // 3) generic sub-layout (openSubLayout / record-menu.js) ဖွင့်ထားရင် sub-back-btn ကို trigger
         const contentView = document.getElementById('content-view');
         if (contentView && contentView.classList.contains('sub-layout-active')) {
             const backBtn = document.getElementById('sub-back-btn');
             if (backBtn) { backBtn.click(); return; }
         }
 
-        // 3) main tab ပေါ်ရောက်နေမှသာ exit dialog ပြ
+        // 4) main tab ပေါ်ရောက်နေမယ်ဆိုရင် — Home မဟုတ်တဲ့ tab (Record/Dashboard/
+        //    History/Setting) ပေါ်ရောက်နေရင် Home ကို အရင်ပြန်ပို့၊ Home ပေါ်
+        //    ရောက်နေမှသာ Exit dialog ပြ
+        const appContainer = document.querySelector('.app-container');
+        const currentTab = appContainer ? appContainer.getAttribute('data-tab') : 'home';
+        if (currentTab && currentTab !== 'home') {
+            window.switchTab('home');
+            return;
+        }
+
         if (window.showExitConfirmationDialog) window.showExitConfirmationDialog();
     });
 })();

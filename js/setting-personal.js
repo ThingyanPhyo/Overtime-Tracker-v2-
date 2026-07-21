@@ -10,7 +10,7 @@
 
 function h() { return window._settingHelpers || {}; }
 
-function openPersonalSubLayout() {
+function openPersonalSubLayout(isReturning) {
     ['pic-sub-layout','email-sub-layout'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el && typeof el._kbCleanup === 'function') el._kbCleanup();
@@ -68,7 +68,15 @@ function openPersonalSubLayout() {
         .personal-sub-fade{animation:personalSubIn 0.2s ease-out;}
         @keyframes personalSubOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(30px)}}</style>`;
 
+    // hardware back ခလုတ်အတွက် — Personal Info ကို Setting tab ကနေ တစ်ခါ
+    // ဝင်တဲ့အခါမှသာ register (Picture/Email ကနေ ပြန်ဝင်လာတာဆိုရင် (isReturning)
+    // ရှေ့က register ထားတဲ့ handler ကိုပဲ ဆက်သုံး — ထပ်မထည့်ပါ)
+    if (!isReturning && window.pushBackHandler) {
+        window.pushBackHandler(() => document.getElementById('personal-back-btn')?.click());
+    }
+
     document.getElementById('personal-back-btn')?.addEventListener('click', () => {
+        if (window.popBackHandler) window.popBackHandler();
         const fadeEl = document.querySelector('.personal-sub-fade');
         if (fadeEl) fadeEl.style.animation = 'personalSubOut 0.18s ease-in forwards';
         setTimeout(() => {
@@ -95,7 +103,10 @@ function openPersonalSubLayout() {
     });
 }
 
-function openPictureSubLayout() {
+function openPictureSubLayout(isRefresh) {
+    // ကိုယ့်ဟာကိုယ် ပြန်ဖွင့်နေတာဆိုရင် (upload/delete ပြီးနောက် ပြန် render) —
+    // ရှေ့က push ထားတဲ့ handler ဟာဟာသက်သက် ကျန်နေမှာမို့ အရင်ဖယ်ပြီးမှ အသစ်ထည့်
+    if (isRefresh && window.popBackHandler) window.popBackHandler();
     const contentView = document.getElementById('content-view');
     if (!contentView) return;
     const photo     = (typeof window.getProfilePhoto === 'function') ? window.getProfilePhoto() : null;
@@ -165,10 +176,15 @@ function openPictureSubLayout() {
         .pic-sub-fade{animation:picSubIn 0.2s ease-out;}
         @keyframes picSubOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(30px)}}</style>`;
 
+    if (window.pushBackHandler) {
+        window.pushBackHandler(() => document.getElementById('pic-sub-back-btn')?.click());
+    }
+
     function exitToPersonal() {
+        if (window.popBackHandler) window.popBackHandler();
         const fadeEl = document.getElementById('pic-sub-layout');
         if (fadeEl) fadeEl.style.animation = 'picSubOut 0.18s ease-in forwards';
-        setTimeout(() => openPersonalSubLayout(), 180);
+        setTimeout(() => openPersonalSubLayout(true), 180);
     }
     document.getElementById('pic-sub-back-btn')?.addEventListener('click', exitToPersonal);
     document.getElementById('username-cancel-btn')?.addEventListener('click', exitToPersonal);
@@ -212,7 +228,11 @@ function openPictureSubLayout() {
                 spinner.classList.add('pic-saving-check');
                 spinner.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
             }
-            setTimeout(() => { document.getElementById('pic-saving-overlay')?.remove(); openPersonalSubLayout(); }, 400);
+            setTimeout(() => {
+                document.getElementById('pic-saving-overlay')?.remove();
+                if (window.popBackHandler) window.popBackHandler();
+                openPersonalSubLayout(true);
+            }, 400);
         }, 700);
     });
 
@@ -231,7 +251,7 @@ function openPictureSubLayout() {
             window.compressProfileImage(file, function(b64) {
                 if (typeof window.saveProfilePhoto === 'function') window.saveProfilePhoto(b64);
                 if (typeof window.patchProfileAvatar === 'function') window.patchProfileAvatar();
-                openPictureSubLayout();
+                openPictureSubLayout(true);
             });
         }
         this.value = '';
@@ -287,10 +307,15 @@ function openEmailSubLayout() {
         .email-sub-fade{animation:emailSubIn 0.2s ease-out;}
         @keyframes emailSubOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(30px)}}</style>`;
 
+    if (window.pushBackHandler) {
+        window.pushBackHandler(() => document.getElementById('email-back-btn')?.click());
+    }
+
     function exitToPersonal() {
+        if (window.popBackHandler) window.popBackHandler();
         const fadeEl = document.getElementById('email-sub-layout');
         if (fadeEl) fadeEl.style.animation = 'emailSubOut 0.18s ease-in forwards';
-        setTimeout(() => openPersonalSubLayout(), 180);
+        setTimeout(() => openPersonalSubLayout(true), 180);
     }
     document.getElementById('email-back-btn')?.addEventListener('click',    exitToPersonal);
     document.getElementById('email-cancel-btn')?.addEventListener('click',  exitToPersonal);
@@ -331,7 +356,11 @@ function openEmailSubLayout() {
                 spinner.classList.add('pic-saving-check');
                 spinner.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
             }
-            setTimeout(() => { overlay.remove(); openPersonalSubLayout(); }, 400);
+            setTimeout(() => {
+                overlay.remove();
+                if (window.popBackHandler) window.popBackHandler();
+                openPersonalSubLayout(true);
+            }, 400);
         }, 700);
     });
 }
@@ -380,7 +409,7 @@ function openPictureDialog(fileInput) {
         overlay.remove();
         localStorage.removeItem('ot_profile_photo');
         if (typeof window.patchProfileAvatar === 'function') window.patchProfileAvatar();
-        openPictureSubLayout();
+        openPictureSubLayout(true);
     });
 }
 
